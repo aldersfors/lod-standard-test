@@ -1,0 +1,56 @@
+# Baseline rules for papaya-coconut.
+#
+# Chosen from a scan of 30 active (non-archived) repositories on 2026-10-23: each rule
+# is a convention most repositories already follow, so the first scorecard shows a few
+# real gaps instead of noise.
+
+[[rule]]
+id = "REPO-001"
+title = "README present"
+level = "must"
+check = { kind = "file_exists", path = "README.md" }
+remediation = { hint = "Add a README.md describing what the repository is for, who owns it and how to run or deploy it.", scope = ["README.md"] }
+
+[[rule]]
+id = "REPO-002"
+title = "CODEOWNERS assigns an owning team"
+level = "must"
+check = { kind = "codeowners_present" }
+remediation = { hint = "Add a CODEOWNERS file with at least `* @papaya-coconut/operations`, or the team that owns the repository.", scope = ["CODEOWNERS", ".github/CODEOWNERS"] }
+
+[[rule]]
+id = "SEC-001"
+title = "No committed .env files"
+level = "must"
+check = { kind = "file_absent", path = "**/.env" }
+remediation = { hint = "Remove the .env file, rotate any secrets it held, and add .env to .gitignore. Commit a .env.example instead.", scope = ["**/.env", ".gitignore"] }
+
+[[rule]]
+id = "SEC-002"
+title = "No private keys in PEM files"
+level = "must"
+check = { kind = "file_matches", file = "**/*.pem", pattern = "-----BEGIN [A-Z ]*PRIVATE KEY-----", negate = true }
+remediation = { hint = "Remove the private key from the repository, revoke and reissue it, and load it from a secret store instead. Certificates may stay.", scope = ["**/*.pem"] }
+
+[[rule]]
+id = "DEP-001"
+title = "Renovate extends the shared preset"
+level = "should"
+check = { kind = "renovate_extends", preset = "github>papaya-coconut/renovate-config:default.json5" }
+remediation = { hint = "Add renovate.json5 with extends [\"github>papaya-coconut/renovate-config:default.json5\"].", scope = ["renovate.json", "renovate.json5", ".github/renovate.json", ".github/renovate.json5"] }
+
+[[rule]]
+id = "CI-001"
+title = "Pulumi programs run the shared preview and up workflow"
+level = "should"
+applies_to = { paths = ["**/Pulumi.yaml"] }
+check = { kind = "ci_includes", include = "papaya-coconut/reusable-workflows/.github/workflows/pulumi_preview_up.yml" }
+remediation = { hint = "Call papaya-coconut/reusable-workflows/.github/workflows/pulumi_preview_up.yml from a workflow, as aws and tailscale do.", scope = [".github/workflows/*.yml", ".github/workflows/*.yaml"] }
+
+[[rule]]
+id = "CI-002"
+title = "Workflows declare top-level permissions"
+level = "should"
+applies_to = { paths = [".github/workflows/*.{yml,yaml}"] }
+check = { kind = "yaml_path", file = ".github/workflows/*.{yml,yaml}", path = "permissions", assert = "exists" }
+remediation = { hint = "Add a top-level `permissions:` block (for example `contents: read`) so the GITHUB_TOKEN gets only what the workflow needs.", scope = [".github/workflows/*.yml", ".github/workflows/*.yaml"] }
