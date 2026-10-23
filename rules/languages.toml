@@ -1,0 +1,33 @@
+# Language-specific rules. `applies_to` limits each rule to matching repositories.
+
+[[rule]]
+id = "RUST-001"
+title = "Rust crates use edition 2024"
+level = "should"
+applies_to = { languages = ["Rust"], paths = ["Cargo.toml"] }
+check = { kind = "toml_path", file = "Cargo.toml", path = "package.edition", assert = { equals = "2024" } }
+remediation = { hint = "Set edition = \"2024\" in [package] and run cargo fix --edition.", scope = ["Cargo.toml", "**/*.rs"] }
+
+[[rule]]
+id = "TF-001"
+title = "tflint is configured"
+level = "must"
+applies_to = { paths = ["**/*.tf"] }
+check = { kind = "file_exists", path = ".tflint.hcl" }
+remediation = { hint = "Add .tflint.hcl enabling the aws plugin and the terraform recommended preset.", scope = [".tflint.hcl"] }
+
+[[rule]]
+id = "TF-002"
+title = "Terraform passes the org policies (conftest)"
+level = "should"
+applies_to = { paths = ["**/*.tf"] }
+check = { kind = "exec", command = "conftest", args = ["test", "--output", "json", "."], timeout_secs = 120, files = ["**/*.tf"] }
+remediation = { hint = "Fix the policy violations conftest reports.", scope = ["**/*.tf"] }
+
+[[rule]]
+id = "PRECOMMIT-001"
+title = "pre-commit runs gitleaks"
+level = "should"
+applies_to = { paths = [".pre-commit-config.yaml"] }
+check = { kind = "yaml_path", file = ".pre-commit-config.yaml", path = "repos[*].repo", assert = { matches = "gitleaks" } }
+remediation = { hint = "Add the gitleaks hook to .pre-commit-config.yaml.", scope = [".pre-commit-config.yaml"] }
